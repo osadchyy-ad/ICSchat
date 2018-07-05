@@ -15,7 +15,7 @@
  */
 package com.google.firebase.codelab.friendlychat.entity;
 
-public class FriendlyMessage {
+public class NewsMessage {
 
     private String id;
     private String text;
@@ -23,10 +23,10 @@ public class FriendlyMessage {
     private String photoUrl;
     private String imageUrl;
 
-    public FriendlyMessage() {
+    public NewsMessage() {
     }
 
-    public FriendlyMessage(String text, String name, String photoUrl, String imageUrl) {
+    public NewsMessage(String text, String name, String photoUrl, String imageUrl) {
         this.text = text;
         this.name = name;
         this.photoUrl = photoUrl;

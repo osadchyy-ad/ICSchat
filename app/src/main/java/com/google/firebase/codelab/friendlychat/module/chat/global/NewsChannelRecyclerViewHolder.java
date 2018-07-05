@@ -15,6 +15,8 @@ public class NewsChannelRecyclerViewHolder extends RecyclerView.ViewHolder {
     TextView messengerTextView;
     CircleImageView messengerImageView;
 
+    //Describing viewholder of news to form news element in activity
+
     public NewsChannelRecyclerViewHolder(View itemView) {
         super(itemView);
         messageTextView = itemView.findViewById(R.id.messageTextView);

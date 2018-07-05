@@ -1,18 +1,3 @@
-/**
- * Copyright Google Inc. All Rights Reserved.
- * <p/>
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * <p/>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p/>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.google.firebase.codelab.friendlychat.module.chat.global;
 
 import android.content.Intent;
@@ -35,7 +20,6 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -55,7 +39,7 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.codelab.friendlychat.R;
 import com.google.firebase.codelab.friendlychat.module.sign.SignInActivity;
 import com.google.firebase.codelab.friendlychat.app.CodelabPreferences;
-import com.google.firebase.codelab.friendlychat.entity.FriendlyMessage;
+import com.google.firebase.codelab.friendlychat.entity.NewsMessage;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -65,34 +49,33 @@ import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
 public class NewsChannelActivity extends AppCompatActivity
-//        implements GoogleApiClient.OnConnectionFailedListener
-    {
 
+    {
     private static final String TAG = "NewsChannelActivity";
-    public static final String MESSAGES_CHILD = "messages";
-    private static final int REQUEST_INVITE = 1;
+    public static final String MESSAGES_CHILD = "news";
+
     private static final int REQUEST_IMAGE = 2;
-    private static final String LOADING_IMAGE_URL = "https://www.google.com/images/spin-32.gif";
+    private static final String LOADING_URL = "https://www.google.com/images/spin-32.gif";
     public static final int DEFAULT_MSG_LENGTH_LIMIT = 10;
     public static final String ANONYMOUS = "anonymous";
-    private static final String MESSAGE_SENT_EVENT = "message_sent";
+
     private String mUsername;
     private String mPhotoUrl;
     private SharedPreferences mSharedPreferences;
     private GoogleApiClient mGoogleApiClient;
-    private static final String MESSAGE_URL = "http://friendlychat.firebase.google.com/message/";
 
     private ImageButton mSendButton;
-    private RecyclerView mMessageRecyclerView;
+    private RecyclerView mNewsRecyclerView;
     private LinearLayoutManager mLinearLayoutManager;
     private ProgressBar mProgressBar;
-    private EditText mMessageEditText;
-    private ImageView mAddMessageImageView;
-
+    private EditText mNewsEditText;
+    private ImageView mAddNewsImageView;
     private FirebaseAuth mFirebaseAuth;
     private FirebaseUser mFirebaseUser;
     private DatabaseReference mFirebaseDatabaseReference;
-    private FirebaseRecyclerAdapter<FriendlyMessage, NewsChannelRecyclerViewHolder> mFirebaseAdapter;
+    private FirebaseRecyclerAdapter<NewsMessage, NewsChannelRecyclerViewHolder> mFirebaseAdapter;
+
+    //Initializing all components and some logic of current activity (like connecting to Firebase)
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -114,30 +97,32 @@ public class NewsChannelActivity extends AppCompatActivity
         }
 
 
-        mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
-        mMessageRecyclerView = (RecyclerView) findViewById(R.id.messageRecyclerView);
+        mProgressBar = findViewById(R.id.progressBar);
+        mNewsRecyclerView = findViewById(R.id.messageRecyclerView);
         mLinearLayoutManager = new LinearLayoutManager(this);
         mLinearLayoutManager.setStackFromEnd(true);
-        mMessageRecyclerView.setLayoutManager(mLinearLayoutManager);
+        mNewsRecyclerView.setLayoutManager(mLinearLayoutManager);
+
+        //Getting database reference and parse it
 
         mFirebaseDatabaseReference = FirebaseDatabase.getInstance().getReference();
-        SnapshotParser<FriendlyMessage> parser = new SnapshotParser<FriendlyMessage>() {
+        SnapshotParser<NewsMessage> parser = new SnapshotParser<NewsMessage>() {
             @Override
-            public FriendlyMessage parseSnapshot(DataSnapshot dataSnapshot) {
-                FriendlyMessage friendlyMessage = dataSnapshot.getValue(FriendlyMessage.class);
-                if (friendlyMessage != null) {
-                    friendlyMessage.setId(dataSnapshot.getKey());
+            public NewsMessage parseSnapshot(DataSnapshot dataSnapshot) {
+                NewsMessage newsMessage = dataSnapshot.getValue(NewsMessage.class);
+                if (newsMessage != null) {
+                    newsMessage.setId(dataSnapshot.getKey());
                 }
-                return friendlyMessage;
+                return newsMessage;
             }
         };
 
         DatabaseReference messagesRef = mFirebaseDatabaseReference.child(MESSAGES_CHILD);
-        FirebaseRecyclerOptions<FriendlyMessage> options =
-                new FirebaseRecyclerOptions.Builder<FriendlyMessage>()
+        FirebaseRecyclerOptions<NewsMessage> options =
+                new FirebaseRecyclerOptions.Builder<NewsMessage>()
                         .setQuery(messagesRef, parser)
                         .build();
-        mFirebaseAdapter = new FirebaseRecyclerAdapter<FriendlyMessage, NewsChannelRecyclerViewHolder>(options) {
+        mFirebaseAdapter = new FirebaseRecyclerAdapter<NewsMessage, NewsChannelRecyclerViewHolder>(options) {
             @Override
             public NewsChannelRecyclerViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
                 LayoutInflater inflater = LayoutInflater.from(viewGroup.getContext());
@@ -147,14 +132,14 @@ public class NewsChannelActivity extends AppCompatActivity
             @Override
             protected void onBindViewHolder(final NewsChannelRecyclerViewHolder viewHolder,
                                             int position,
-                                            FriendlyMessage friendlyMessage) {
+                                            NewsMessage newsMessage) {
                 mProgressBar.setVisibility(ProgressBar.INVISIBLE);
-                if (friendlyMessage.getText() != null) {
-                    viewHolder.messageTextView.setText(friendlyMessage.getText());
+                if (newsMessage.getText() != null) {
+                    viewHolder.messageTextView.setText(newsMessage.getText());
                     viewHolder.messageTextView.setVisibility(TextView.VISIBLE);
                     viewHolder.messageImageView.setVisibility(ImageView.GONE);
-                } else if (friendlyMessage.getImageUrl() != null) {
-                    String imageUrl = friendlyMessage.getImageUrl();
+                } else if (newsMessage.getImageUrl() != null) {
+                    String imageUrl = newsMessage.getImageUrl();
                     if (imageUrl.startsWith("gs://")) {
                         StorageReference storageReference = FirebaseStorage.getInstance()
                                 .getReferenceFromUrl(imageUrl);
@@ -175,7 +160,7 @@ public class NewsChannelActivity extends AppCompatActivity
                                 });
                     } else {
                         Glide.with(viewHolder.messageImageView.getContext())
-                                .load(friendlyMessage.getImageUrl())
+                                .load(newsMessage.getImageUrl())
                                 .into(viewHolder.messageImageView);
                     }
                     viewHolder.messageImageView.setVisibility(ImageView.VISIBLE);
@@ -183,13 +168,13 @@ public class NewsChannelActivity extends AppCompatActivity
                 }
 
 
-                viewHolder.messengerTextView.setText(friendlyMessage.getName());
-                if (friendlyMessage.getPhotoUrl() == null) {
+                viewHolder.messengerTextView.setText(newsMessage.getName());
+                if (newsMessage.getPhotoUrl() == null) {
                     viewHolder.messengerImageView.setImageDrawable(ContextCompat.getDrawable(NewsChannelActivity.this,
                             R.drawable.ic_account_circle_black_36dp));
                 } else {
                     Glide.with(NewsChannelActivity.this)
-                            .load(friendlyMessage.getPhotoUrl())
+                            .load(newsMessage.getPhotoUrl())
                             .into(viewHolder.messengerImageView);
                 }
 
@@ -209,17 +194,18 @@ public class NewsChannelActivity extends AppCompatActivity
                 if (lastVisiblePosition == -1 ||
                         (positionStart >= (friendlyMessageCount - 1) &&
                                 lastVisiblePosition == (positionStart - 1))) {
-                    mMessageRecyclerView.scrollToPosition(positionStart);
+                    mNewsRecyclerView.scrollToPosition(positionStart);
                 }
             }
         });
 
-        mMessageRecyclerView.setAdapter(mFirebaseAdapter);
+        mNewsRecyclerView.setAdapter(mFirebaseAdapter);
 
-        mMessageEditText = (EditText) findViewById(R.id.messageEditText);
-        mMessageEditText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(mSharedPreferences
+
+        mNewsEditText = findViewById(R.id.messageEditText);
+        mNewsEditText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(mSharedPreferences
                 .getInt(CodelabPreferences.FRIENDLY_MSG_LENGTH, DEFAULT_MSG_LENGTH_LIMIT))});
-        mMessageEditText.addTextChangedListener(new TextWatcher() {
+        mNewsEditText.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
             }
@@ -242,19 +228,19 @@ public class NewsChannelActivity extends AppCompatActivity
         mSendButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                FriendlyMessage friendlyMessage = new
-                        FriendlyMessage(mMessageEditText.getText().toString(),
+                NewsMessage newsMessage = new
+                        NewsMessage(mNewsEditText.getText().toString(),
                         mUsername,
                         mPhotoUrl,
                         null /* no image */);
                 mFirebaseDatabaseReference.child(MESSAGES_CHILD)
-                        .push().setValue(friendlyMessage);
-                mMessageEditText.setText("");
+                        .push().setValue(newsMessage);
+                mNewsEditText.setText("");
             }
         });
 
-        mAddMessageImageView = findViewById(R.id.addMessageImageView);
-        mAddMessageImageView.setOnClickListener(new View.OnClickListener() {
+        mAddNewsImageView = findViewById(R.id.addMessageImageView);
+        mAddNewsImageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
@@ -311,14 +297,6 @@ public class NewsChannelActivity extends AppCompatActivity
         }
     }
 
-//    @Override
-//    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-//        // An unresolvable error has occurred and Google APIs (including Sign-In) will not
-//        // be available.
-//        Log.d(TAG, "onConnectionFailed:" + connectionResult);
-//        Toast.makeText(this, "Google Play Services error.", Toast.LENGTH_SHORT).show();
-//    }
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -330,8 +308,8 @@ public class NewsChannelActivity extends AppCompatActivity
                     final Uri uri = data.getData();
                     Log.d(TAG, "Uri: " + uri.toString());
 
-                    FriendlyMessage tempMessage = new FriendlyMessage(null, mUsername, mPhotoUrl,
-                            LOADING_IMAGE_URL);
+                    NewsMessage tempMessage = new NewsMessage(null, mUsername, mPhotoUrl,
+                            LOADING_URL);
                     mFirebaseDatabaseReference.child(MESSAGES_CHILD).push()
                             .setValue(tempMessage, new DatabaseReference.CompletionListener() {
                                 @Override
@@ -363,12 +341,12 @@ public class NewsChannelActivity extends AppCompatActivity
                     @Override
                     public void onComplete(@NonNull Task<UploadTask.TaskSnapshot> task) {
                         if (task.isSuccessful()) {
-                            FriendlyMessage friendlyMessage =
-                                    new FriendlyMessage(null, mUsername, mPhotoUrl,
+                            NewsMessage newsMessage =
+                                    new NewsMessage(null, mUsername, mPhotoUrl,
                                             task.getResult().getMetadata().getDownloadUrl()
                                                     .toString());
                             mFirebaseDatabaseReference.child(MESSAGES_CHILD).child(key)
-                                    .setValue(friendlyMessage);
+                                    .setValue(newsMessage);
                         } else {
                             Log.w(TAG, "Image upload task was not successful.",
                                     task.getException());

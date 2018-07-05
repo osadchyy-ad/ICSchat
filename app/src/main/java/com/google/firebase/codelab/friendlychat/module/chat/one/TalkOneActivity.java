@@ -41,6 +41,8 @@ public class TalkOneActivity extends AppCompatActivity {
 
     private EditText editMessage;
 
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
